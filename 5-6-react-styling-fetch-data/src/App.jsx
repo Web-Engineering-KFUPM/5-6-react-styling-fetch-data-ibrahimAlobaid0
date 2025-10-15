@@ -323,47 +323,115 @@ import SearchBar from './components/SearchBar'
 import UserModal from './components/UserModal'
 
 function App() {
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    {/*API fetch logic*/}
+    {/* API fetch logic */}
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('https://jsonplaceholder.typicode.com/users');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+        
+        const data = await response.json();
+        setUsers(data);
+        setFilteredUsers(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  }, [])
+    fetchUsers();
+  }, []);
+
+  // Filter users based on search term
+  useEffect(() => {
+    if (searchTerm === '') {
+      setFilteredUsers(users);
+    } else {
+      const filtered = users.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, users]);
 
   const handleUserClick = (user) => {
-  }
+    setSelectedUser(user);
+    setShowModal(true);
+  };
 
   const handleCloseModal = () => {
-  }
+    setShowModal(false);
+    setSelectedUser(null);
+  };
 
   return (
     <div className="app">
-      <header className="">
-        <Container>
-          <h1 className="">User Management Dashboard</h1>
-          <p className="">Manage and view user information</p>
-        </Container>
+      <header className="bg-primary text-white py-3 mb-4 shadow">
+        <div className="container">
+          <h1 className="h2 mb-0">User Management Dashboard</h1>
+          <p className="mb-0 opacity-75">Manage and view user information</p>
+        </div>
       </header>
 
-      <Container className="">
-        <SearchBar />
+      <div className="container py-3">
+        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
 
         {/* {loading && <Spinner ... />} */}
+        {loading && (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-3">Loading users...</p>
+          </div>
+        )}
+
         {/* {error && <Alert ...>{error}</Alert>} */}
+        {error && (
+          <div className="alert alert-danger" role="alert">
+            <h4 className="alert-heading">Error!</h4>
+            {error}
+          </div>
+        )}
+
         {/* <UserList users={filteredUsers} onUserClick={handleUserClick} /> */}
+        {!loading && !error && (
+          <UserList users={filteredUsers} onUserClick={handleUserClick} />
+        )}
 
-        <UserModal />
-      </Container>
+        <UserModal 
+          show={showModal} 
+          user={selectedUser} 
+          onHide={handleCloseModal} 
+        />
+      </div>
 
-      <footer className="">
-        <Container>
+      <footer className="bg-light py-4 mt-5">
+        <div className="container">
           <p className="text-center text-muted mb-0">
             &copy; 2024 User Management Dashboard
           </p>
-        </Container>
+        </div>
       </footer>
-    </div>
-  )
+
+     
+   
+    
+      </div>
+  );
 }
 
-export default App
+export default App;
